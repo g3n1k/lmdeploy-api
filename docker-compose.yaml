@@ -1,0 +1,40 @@
+services:
+  lmdeploy:
+    # image: openmmlab/lmdeploy
+    image: my-lmdeploy-dev
+    ports:
+      - "9030:9000"
+      - "23333:23333"
+    volumes:
+      - ./controller.py:/app/controller.py
+      - ./.env:/app/.env
+      - /home/rocky/.cache/huggingface/hub:/root/.cache/huggingface/hub
+      # - ./models:/home/root/.cache/huggingface
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=0
+      - CUDA_LAUNCH_BLOCKING=1
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    command: >
+      uvicorn controller:app --host 0.0.0.0 --port 9000 && curl localhost:9000/start
+#     lmdeploy serve api_server OpenGVLab/InternVL3-8B-AWQ --device cuda --server-port 23333
+#     lmdeploy serve api_server Qwen/Qwen2-VL-2B-Instruct --device cuda --server-port 23333
+# CUDA_LAUNCH_BLOCKING=1 lmdeploy serve api_server OpenGVLab/InternVL3-8B-AWQ --device cuda --server-port 23333
+#lmdeploy serve api_server  OpenGVLab/InternVL3-8B-AWQ --server-port 23333
+# serve api_server OpenGVLab/InternVL3-8B-AWQ --port 23333
+# lmdeploy serve OpenGVLab/InternVL3-8B-AWQ --device cuda --server-port 23333
+
+    runtime: nvidia
+    networks:
+      shared-network:
+        aliases:
+          - lmdeploy
+
+networks:
+  shared-network:
+    external: true
